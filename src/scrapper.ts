@@ -1,5 +1,4 @@
-// @ts-ignore
-import got from "got";
+import {got} from 'got'
 import * as cheerio from "cheerio";
 import { getRandomUserAgent, isValidUrl, sanitizeInput } from "./utils";
 import { promises as fs, existsSync } from "node:fs";
