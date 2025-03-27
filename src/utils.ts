@@ -1,5 +1,14 @@
 import Scrapper from "./scrapper";
 
+export function isValidUrl(url: string): boolean {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // 📌 URL to'liq shaklda yoki nisbiy ekanligini tekshirish
 export function isAbsoluteUrl(url: string): boolean {
   return /^(https?:)?\/\//.test(url);
@@ -34,3 +43,11 @@ const userAgents = [
 
 
 export const getRandomUserAgent = (): string => userAgents[Math.random() * userAgents.length | 0];
+
+export function sanitizeInput(data: Record<string, string>): Record<string, string> {
+  const sanitizedData: Record<string, string> = {};
+  for (const key in data) {
+    sanitizedData[key] = data[key].replace(/[<>]/g, ""); // XSS yoki HTML injection oldini olish
+  }
+  return sanitizedData;
+}

@@ -1,10 +1,19 @@
 // @ts-ignore
 import got from "got";
 import * as cheerio from "cheerio";
-import { getRandomUserAgent } from "./utils";
+import { getRandomUserAgent, isValidUrl, sanitizeInput } from "./utils";
 import { promises as fs, existsSync } from "node:fs";
 import path from "node:path";
 import { FormDetails, JsonLD, Metadata, TableData } from "./types";
+
+const requestOptions = {
+  headers: {
+    "User-Agent": getRandomUserAgent(),
+  },
+  timeout: { request: 5000 },
+  retry: { limit: 2 },
+  followRedirect: true,
+};
 
 class Scrapper {
   private readonly $: cheerio.CheerioAPI;
@@ -14,20 +23,21 @@ class Scrapper {
   }
 
   static async connect(url: string): Promise<Scrapper> {
-    const response = await got(url, {
-      headers: {
-        "User-Agent": getRandomUserAgent()
-      }
-    });
+    if (!isValidUrl(url)) {
+      throw new Error(`Invalid URL: ${url}`);
+    }
+    const response = await got(url, requestOptions);
     return new Scrapper(response.body);
   }
 
   static async post(url: string, data: Record<string, string>): Promise<Scrapper> {
+    if (!isValidUrl(url)) {
+      throw new Error(`Invalid URL: ${url}`);
+    }
+    const safeData = sanitizeInput(data);
     const response = await got.post(url, {
-      form: data,
-      headers: {
-        "User-Agent": getRandomUserAgent()
-      }
+      form: safeData,
+      ...requestOptions,
     });
     return new Scrapper(response.body);
   }
@@ -85,7 +95,7 @@ class Scrapper {
       ogImage: this.metaContent("og:image"),
       twitterTitle: this.metaContent("twitter:title"),
       twitterDescription: this.metaContent("twitter:description"),
-      twitterImage: this.metaContent("twitter:image"),
+      twitterImage: this.metaContent("twitter:image")
     };
   }
 
