@@ -5,12 +5,14 @@ import { getRandomUserAgent, isValidUrl, sanitizeInput } from "./utils";
 import { promises as fs, existsSync } from "node:fs";
 import path from "node:path";
 import { FormDetails, JsonLD, Metadata, TableData } from "./types";
+import { URL } from "node:url";
+import mime from "mime-types";
 
 const requestOptions = {
   headers: {
     "User-Agent": getRandomUserAgent(),
   },
-  timeout: { request: 5000 },
+  timeout: { request: 3000 },
   retry: { limit: 2 },
   followRedirect: true,
 };
@@ -22,11 +24,15 @@ class Scrapper {
     this.$ = cheerio.load(html);
   }
 
-  static async connect(url: string): Promise<Scrapper> {
+  static async connect(url: string, options: { retryLimit?: number } = {}): Promise<Scrapper> {
     if (!isValidUrl(url)) {
       throw new Error(`Invalid URL: ${url}`);
     }
-    const response = await got(url, requestOptions);
+    const finalOptions = {
+      ...requestOptions,
+      retry: { limit: options.retryLimit ?? 2 }, // Foydalanuvchi o‘zgartira oladigan retry
+    };
+    const response = await got(url, finalOptions);
     return new Scrapper(response.body);
   }
 
@@ -37,7 +43,7 @@ class Scrapper {
     const safeData = sanitizeInput(data);
     const response = await got.post(url, {
       form: safeData,
-      ...requestOptions,
+      ...requestOptions
     });
     return new Scrapper(response.body);
   }
@@ -58,13 +64,6 @@ class Scrapper {
     return this.$(selector).attr(attribute);
   }
 
-  getLinks(selector: string): string[] {
-    return this.select(selector)
-      .map((_, el) => this.$(el).attr("href"))
-      .get()
-      .filter((link) => link !== undefined) as string[];
-  }
-
   count(selector: string): number {
     return this.select(selector).length;
   }
@@ -75,13 +74,6 @@ class Scrapper {
 
   outerHtml(selector: string): string {
     return this.select(selector).prop("outerHTML") || "";
-  }
-
-  imageSources(selector = "img"): string[] {
-    return this.select(selector)
-      .map((_, el) => this.$(el).attr("src"))
-      .get()
-      .filter((src) => src !== undefined) as string[];
   }
 
   getMetadata(): Metadata {
@@ -134,12 +126,19 @@ class Scrapper {
 
     await Promise.all(
       images.map(async (url, index) => {
-        const filename = path.join(folder, `image_${index + 1}.jpg`);
+        if (!isValidUrl(url)) return; // Xavfsiz URL ekanligini tekshiramiz
         const response = await got(url, { responseType: "buffer" });
+
+        const contentType = response.headers["content-type"] || "";
+        if (!contentType.startsWith("image/")) return; // Faqat rasm fayllarini yuklash
+
+        const ext = mime.extension(contentType) || "jpg";
+        const filename = path.join(folder, `image_${index + 1}.${ext}`);
         await fs.writeFile(filename, response.body);
       })
     );
   }
+
 
   extractEmails(): string[] {
     const text = this.$.text();
@@ -182,6 +181,30 @@ class Scrapper {
       })
       .get()
       .filter((data) => data !== null);
+  }
+
+  // import { URL } from "node:url";
+
+  toAbsoluteUrl(relativeUrl: string, baseUrl: string): string {
+    try {
+      return new URL(relativeUrl, baseUrl).href;
+    } catch {
+      return relativeUrl;
+    }
+  }
+
+  getLinks(selector: string): string[] {
+    return this.select(selector)
+      .map((_, el) => this.toAbsoluteUrl(this.$(el).attr("href") || "", this.$("base").attr("href") || ""))
+      .get()
+      .filter((link) => link !== undefined);
+  }
+
+  imageSources(selector = "img"): string[] {
+    return this.select(selector)
+      .map((_, el) => this.toAbsoluteUrl(this.$(el).attr("src") || "", this.$("base").attr("href") || ""))
+      .get()
+      .filter((src) => src !== undefined);
   }
 }
 

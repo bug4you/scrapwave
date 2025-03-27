@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.23.0",
+    "@types/mime-types": "^2.1.4",
     "@types/node": "^22.13.13",
     "eslint": "^9.23.0",
     "eslint-config-prettier": "^10.1.1",
@@ -46,6 +47,7 @@
   },
   "dependencies": {
     "cheerio": "^1.0.0",
-    "got": "^14.4.6"
+    "got": "^14.4.6",
+    "mime-types": "^3.0.1"
   }
 }

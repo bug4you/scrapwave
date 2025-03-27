@@ -1,4 +1,5 @@
 import Scrapper from "./scrapper";
+import { URL } from "url";
 
 export function isValidUrl(url: string): boolean {
   try {
@@ -12,6 +13,14 @@ export function isValidUrl(url: string): boolean {
 // 📌 URL to'liq shaklda yoki nisbiy ekanligini tekshirish
 export function isAbsoluteUrl(url: string): boolean {
   return /^(https?:)?\/\//.test(url);
+}
+
+export function toAbsoluteUrl(base: string, relative: string): string {
+  try {
+    return new URL(relative, base).href;
+  } catch {
+    return relative; // Noto‘g‘ri URL bo‘lsa, o‘zini qaytarish
+  }
 }
 
 // 📌 Sahifadagi barcha rasm linklarini olish
@@ -37,7 +46,6 @@ const userAgents = [
   "Mozilla/5.0 (Android 13; Mobile; rv:109.0) Gecko/109.0 Firefox/109.0",
   "Mozilla/5.0 (iPad; CPU OS 16_7 like Mac OS X) AppleWebKit/537.36 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/537.36"
 ];
-
 
 export const getRandomUserAgent = (): string => userAgents[Math.random() * userAgents.length | 0];
 
