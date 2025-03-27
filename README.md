@@ -1,5 +1,7 @@
 # ScrapWave 🚀 (Under Development)  
 
+[![CodeQL Advanced](https://github.com/bug4you/scrapwave/actions/workflows/codeql.yml/badge.svg)](https://github.com/bug4you/scrapwave/actions/workflows/codeql.yml)
+
 🚧 **ScrapWave is currently in development!** 🚧  
 We are actively building a powerful and fast web scraper in TypeScript. The core functionalities are working, but we are refining features and ensuring stability before the official release.  
 
