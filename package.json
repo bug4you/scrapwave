@@ -1,6 +1,6 @@
 {
   "name": "scrapwave",
-  "version": "0.1.0",
+  "version": "0.2.2",
   "description": "A lightweight and powerful web scraping library for Node.js with TypeScript support.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
