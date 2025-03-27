@@ -104,7 +104,6 @@ Allows customizing request settings such as timeout, retries, headers, etc.
 ScrapWave.setRequestOptions({
   timeout: { request: 4000 }, // Set timeout to 4s
   retry: { limit: 3 }, // Allow up to 3 retries
-  headers: { "User-Agent": "MyCustomBot" }
 });
 ```
 
