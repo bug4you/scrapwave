@@ -3,6 +3,13 @@
 ScrapWave is a lightweight and powerful web scraping library built on top of `got` and `cheerio`. It allows you to fetch, parse, and extract data from web pages with ease.
 
 [![CodeQL Advanced](https://github.com/bug4you/scrapwave/actions/workflows/codeql.yml/badge.svg)](https://github.com/bug4you/scrapwave/actions/workflows/codeql.yml)
+[![Run Scrapper Tests](https://github.com/bug4you/scrapwave/actions/workflows/test.yml/badge.svg)](https://github.com/bug4you/scrapwave/actions/workflows/test.yml)
+![npm](https://img.shields.io/npm/v/scrapwave)
+![npm](https://img.shields.io/npm/dm/scrapwave)
+![GitHub](https://img.shields.io/github/license/bug4you/scrapwave)
+
+
+
 
 ## 🚀 Installation
 
