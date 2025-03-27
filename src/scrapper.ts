@@ -8,31 +8,34 @@ import { FormDetails, JsonLD, Metadata, TableData } from "./types";
 import { URL } from "node:url";
 import mime from "mime-types";
 
-const requestOptions = {
-  headers: {
-    "User-Agent": getRandomUserAgent(),
-  },
-  timeout: { request: 3000 },
-  retry: { limit: 2 },
-  followRedirect: true,
-};
-
 class Scrapper {
   private readonly $: cheerio.CheerioAPI;
+  private static requestOptions = {
+    headers: {
+      "User-Agent": getRandomUserAgent(),
+    },
+    timeout: { request: 3000 },
+    retry: { limit: 2 },
+    followRedirect: true,
+  };
 
   constructor(html: string) {
     this.$ = cheerio.load(html);
   }
 
-  static async connect(url: string, options: { retryLimit?: number } = {}): Promise<Scrapper> {
+  /**
+   * Scrapper.setRequestOptions({ timeout: { request: 5000 } });
+   * Scrapper.setRequestOptions({ retry: { limit: 5 } });
+   * */
+  static setRequestOptions(options: Partial<typeof Scrapper.requestOptions>) {
+    this.requestOptions = { ...this.requestOptions, ...options };
+  }
+
+  static async connect(url: string): Promise<Scrapper> {
     if (!isValidUrl(url)) {
       throw new Error(`Invalid URL: ${url}`);
     }
-    const finalOptions = {
-      ...requestOptions,
-      retry: { limit: options.retryLimit ?? 2 }, // Foydalanuvchi o‘zgartira oladigan retry
-    };
-    const response = await got(url, finalOptions);
+    const response = await got(url, this.requestOptions);
     return new Scrapper(response.body);
   }
 
@@ -43,7 +46,7 @@ class Scrapper {
     const safeData = sanitizeInput(data);
     const response = await got.post(url, {
       form: safeData,
-      ...requestOptions
+      ...this.requestOptions
     });
     return new Scrapper(response.body);
   }
@@ -138,7 +141,6 @@ class Scrapper {
       })
     );
   }
-
 
   extractEmails(): string[] {
     const text = this.$.text();
