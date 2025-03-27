@@ -2,8 +2,9 @@
 import got from "got";
 import * as cheerio from "cheerio";
 import { getRandomUserAgent } from "./utils";
-import * as fs from "node:fs";
+import { promises as fs, existsSync } from "node:fs";
 import path from "node:path";
+import { FormDetails, JsonLD, Metadata, TableData } from "./types";
 
 class Scrapper {
   private readonly $: cheerio.CheerioAPI;
@@ -73,7 +74,7 @@ class Scrapper {
       .filter((src) => src !== undefined) as string[];
   }
 
-  getMetadata(): Record<string, string | undefined> {
+  getMetadata(): Metadata {
     return {
       title: this.$("title").text().trim() || undefined,
       description: this.metaContent("description"),
@@ -99,7 +100,7 @@ class Scrapper {
       .get();
   }
 
-  getForms(): { action: string; method: string; inputs: string[] }[] {
+  getForms(): FormDetails[] {
     return this.select("form").map((_, form) => {
       const inputs = this.$(form)
         .find("input, textarea, select")
@@ -117,15 +118,15 @@ class Scrapper {
   async downloadImages(folder = "images"): Promise<void> {
     const images = this.imageSources();
 
-    if (!fs.existsSync(folder)) {
-      fs.mkdirSync(folder, { recursive: true });
+    if (!existsSync(folder)) {
+      await fs.mkdir(folder, { recursive: true });
     }
 
     await Promise.all(
       images.map(async (url, index) => {
         const filename = path.join(folder, `image_${index + 1}.jpg`);
         const response = await got(url, { responseType: "buffer" });
-        fs.writeFileSync(filename, response.body);
+        await fs.writeFile(filename, response.body);
       })
     );
   }
@@ -137,10 +138,10 @@ class Scrapper {
 
   extractPhones(): string[] {
     const text = this.$.text();
-    return [...new Set(text.match(/\+?\d{1,3}[-.\s]?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}/g) || [])];
+    return [...new Set(text.match(/\+?\d{1,4}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,5}[-.\s]?\d{1,5}[-.\s]?\d{1,9}/g) || [])];
   }
 
-  tableData(selector: string): string[][] {
+  tableData(selector: string): TableData {
     return this.select(selector)
       .map((_, table) =>
         this.$(table)
@@ -156,11 +157,11 @@ class Scrapper {
       .get(); // Yakuniy massivni qaytarish
   }
 
-  metaContent(name: string): string | undefined {
-    return this.$(`meta[name="${name}"], meta[property="${name}"]`).attr("content");
+  metaContent(name: string): string {
+    return this.$(`meta[name="${name}"], meta[property="${name}"]`).attr("content") || "";
   }
 
-  getJsonLD(): any[] {
+  getJsonLD(): JsonLD {
     return this.select("script[type=\"application/ld+json\"]")
       .map((_, el) => {
         try {
